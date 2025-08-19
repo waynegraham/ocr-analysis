@@ -1,0 +1,7 @@
+pytesseract
+pdf2image
+easyocr
+paddleocr
+torch
+transformers
+nltk

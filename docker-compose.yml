@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   solr:
     build: ./solr
@@ -29,12 +27,15 @@ services:
       - rag
       - solr
 
-  # Add OCR engines as needed
-  ocr-tesseract:
-    image: tesseractshadow/tesseract4re
+  ocr-runner:
+    build:
+      context: ./ocr
+    environment:
+      - PDF_DIR=/app/data/pdfs
+      - OUTPUT_DIR=/app/ocr_output
+    entrypoint: ["python", "runner.py"]
     volumes:
-      - ./data/pdfs:/data/pdfs
-      - ./ocr_output/tesseract:/data/output
-    command: bash -c "tesseract /data/pdfs/input.pdf /data/output/output -l eng"
-
-  # You’ll create separate dockerfiles for other OCR engines if needed
+      - ./data:/app/data
+      - ./ocr_output:/app/ocr_output
+    stdin_open: true
+    tty: true
