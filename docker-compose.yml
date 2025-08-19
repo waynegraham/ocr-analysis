@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  solr:
+    build: ./solr
+    ports:
+      - "8983:8983"
+    volumes:
+      - ./solr/config:/opt/solr/server/solr/configsets/trustees/conf
+    environment:
+      - SOLR_CORE=trustees
+    command:
+      - solr-precreate
+      - trustees
+      - /opt/solr/server/solr/configsets/trustees/conf
+
+  rag:
+    build: ./rag
+    volumes:
+      - ./embeddings:/app/embeddings
+      - ./data:/app/data
+    ports:
+      - "5000:5000"
+
+  # Optional: Basic web UI
+  ui:
+    build: ./ui
+    ports:
+      - "3000:3000"
+    depends_on:
+      - rag
+      - solr
+
+  # Add OCR engines as needed
+  ocr-tesseract:
+    image: tesseractshadow/tesseract4re
+    volumes:
+      - ./data/pdfs:/data/pdfs
+      - ./ocr_output/tesseract:/data/output
+    command: bash -c "tesseract /data/pdfs/input.pdf /data/output/output -l eng"
+
+  # You’ll create separate dockerfiles for other OCR engines if needed
