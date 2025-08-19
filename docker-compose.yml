@@ -5,8 +5,6 @@ services:
     build: ./solr
     ports:
       - "8983:8983"
-    volumes:
-      - ./solr/config:/opt/solr/server/solr/configsets/trustees/conf
     environment:
       - SOLR_CORE=trustees
     command:
