@@ -5,3 +5,5 @@ paddleocr
 torch
 transformers
 nltk
+easyocr
+torch

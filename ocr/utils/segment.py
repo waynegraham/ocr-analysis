@@ -1,5 +1,9 @@
 import re
 import nltk
+import os
+
+nltk.data.path.append(os.getenv("NLTK_DATA", "/usr/local/nltk_data"))
+
 nltk.download("punkt", quiet=True)
 
 from nltk.tokenize import sent_tokenize
