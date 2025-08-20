@@ -30,10 +30,26 @@ services:
   ocr-runner:
     build:
       context: ./ocr
+    environment:
+      - PDF_DIR=/app/data/pdfs
+      - OUTPUT_DIR=/app/ocr_output
+    entrypoint: ["python", "runner.py"]
+    volumes:
+      - ./data:/app/data
+      - ./ocr_output:/app/ocr_output
+    stdin_open: true
+    tty: true
+
+  ocr-runner-gpu:
+    build:
+      context: ./ocr
     deploy:
       resources:
-        devices:
-          - capabilities: [gpu]
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     environment:
       - PDF_DIR=/app/data/pdfs
       - OUTPUT_DIR=/app/ocr_output

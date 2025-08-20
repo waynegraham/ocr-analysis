@@ -7,6 +7,7 @@ This project explores the effectiveness of semantic search (using Apache Solr wi
 ## ✅ Features So Far
 
 ### ✅ OCR Benchmarking Pipeline
+
 - Modular architecture for running different OCR engines:
   - Tesseract
   - EasyOCR (GPU/CPU autodetect)
@@ -15,11 +16,13 @@ This project explores the effectiveness of semantic search (using Apache Solr wi
 - Designed for headless, batch-friendly execution in Docker
 
 ### ✅ Solr with Dense Vector Support
+
 - Solr 9.9 with `knn_vector` field for semantic retrieval
 - Custom schema with meeting metadata and text fields
 - Supports embedding ingestion via Python
 
 ### ✅ Dockerized & Cross-platform
+
 - Runs locally on macOS with CPU
 - Supports GPU acceleration via Docker (CUDA) on WSL/Linux
 - Cross-platform compatibility built into Compose
@@ -29,6 +32,7 @@ This project explores the effectiveness of semantic search (using Apache Solr wi
 ## 🐳 Running the OCR Pipeline
 
 ### 1. Place PDFs
+
 Add all source PDFs to:
 
 ```bash
@@ -43,7 +47,7 @@ docker compose build ocr-runner
 
 ### 3. Run Tesseract OCR
 
-```
+```bash
 docker compose run ocr-runner --engine tesseract
 ```
 
@@ -61,7 +65,7 @@ Each engine creates:
 ocr_output/{engine}/{doc_id}.json
 ```
 
-Example: 
+Example:
 
 ```json
 {
@@ -79,8 +83,8 @@ Example:
 
 Ensure you have:
 
-* NVIDIA Container Toolkit installed
-* Compose service includes:
+- NVIDIA Container Toolkit installed
+- Compose service includes:
 
 ```yaml
 deploy:
