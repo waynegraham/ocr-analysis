@@ -1,9 +1,10 @@
 import argparse
 from pathlib import Path
 import importlib
+import time
 
 PDF_DIR = Path("/app/data/pdfs")
-OUTPUT_DIR = Path("/app/data/ocr_output")
+OUTPUT_BASE = Path("/app/data/ocr_output")
 
 
 def get_engine(engine_name):
@@ -24,21 +25,25 @@ def main():
 
     engine = get_engine(args.engine)
 
+    print(f"🗂 Found {len(list(PDF_DIR.glob('*.pdf')))} PDF files in {PDF_DIR}")
+
     for pdf_file in sorted(PDF_DIR.glob("*.pdf")):
         doc_id = pdf_file.stem
-        output_path = OUTPUT_DIR / args.engine / f"{doc_id}.json"
+        output_path = OUTPUT_BASE / args.engine / f"{doc_id}.json"
         output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        print(f"🗂 Found {len(list(PDF_DIR.glob('*.pdf')))} PDF files in {PDF_DIR}")
 
         if output_path.exists():
             print(f"✅ Skipping {doc_id} (already processed)")
             continue
 
         print(f"🔍 Processing {doc_id} with {args.engine}")
+        start_time = time.time()
+
         try:
-            segments = engine.ocr(pdf_file)
-            output_path.write_text(engine.to_json(segments), encoding="utf-8")
+            result = engine.ocr(pdf_file)
+            result["processing_time"] = round(time.time() - start_time, 2)  # ⏱️ Add timing
+            output_path.write_text(engine.to_json(result), encoding="utf-8")
+            print(f"✅ Wrote {output_path.name} ({result['processing_time']}s)")
         except Exception as e:
             print(f"❌ Error with {doc_id}: {e}")
 

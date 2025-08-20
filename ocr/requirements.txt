@@ -7,3 +7,4 @@ transformers
 nltk
 easyocr
 torch
+pandas
