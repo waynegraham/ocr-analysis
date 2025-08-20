@@ -54,7 +54,13 @@ docker compose run ocr-runner --engine tesseract
 ### 4. Run EasyOCR (auto GPU if available)
 
 ```bash
-docker compose run ocr-runner --engine easyocr
+docker compose run ocr-runner-gpu --engine easyocr
+```
+
+### 5. Run PaddleOCR
+
+```bash
+docker compose run ocr-runner-gpu --engine paddleocr
 ```
 
 ## Output Format (per document)

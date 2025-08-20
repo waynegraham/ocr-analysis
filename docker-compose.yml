@@ -30,6 +30,7 @@ services:
   ocr-runner:
     build:
       context: ./ocr
+      dockerfile: Dockerfile.cpu
     environment:
       - PDF_DIR=/app/data/pdfs
       - OUTPUT_DIR=/app/ocr_output
@@ -41,8 +42,10 @@ services:
     tty: true
 
   ocr-runner-gpu:
+    profiles: ["gpu"]
     build:
       context: ./ocr
+      dockerfile: Dockerfile.gpu
     deploy:
       resources:
         reservations:

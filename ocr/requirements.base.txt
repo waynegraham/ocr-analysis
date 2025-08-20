@@ -1,0 +1,9 @@
+paddleocr
+opencv-python-headless
+pdf2image
+easyocr
+numpy
+nltk
+torch
+matplotlib
+pandas

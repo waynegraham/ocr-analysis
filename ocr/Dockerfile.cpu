@@ -1,0 +1,24 @@
+FROM python:3.10-slim-bullseye
+
+ENV NLTK_DATA=/usr/local/nltk_data
+
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    poppler-utils \
+    libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6 \
+    libgl1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.cpu.txt requirements.base.txt ./
+RUN pip install --upgrade pip && pip install -r requirements.cpu.txt
+
+RUN python -m nltk.downloader -d $NLTK_DATA punkt punkt_tab
+
+COPY . .
+
+CMD ["python", "runner.py"]

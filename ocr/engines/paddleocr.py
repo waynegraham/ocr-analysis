@@ -5,8 +5,20 @@ from paddleocr import PaddleOCR
 from pdf2image import convert_from_path
 from utils.segment import segment_text
 
-# Init OCR engine (auto detects GPU if available and paddle is installed correctly)
-ocr_engine = PaddleOCR(use_angle_cls=True, lang='en', use_gpu=False)
+# Init OCR engine (auto detects GPU if available and paddle is installed
+# correctly)
+
+import torch
+
+ocr_engine = PaddleOCR(
+    use_angle_cls=True,
+    lang='en',
+    use_gpu=torch.cuda.is_available()
+)
+
+
+print("🔧 Paddle device:", paddle.get_device()) 
+
 
 def ocr(pdf_path):
     start_time = time.time()
@@ -39,6 +51,7 @@ def ocr(pdf_path):
         "avg_confidence": avg_conf,
         "processing_time": processing_time
     }
+
 
 def to_json(result):
     return json.dumps(result, indent=2)

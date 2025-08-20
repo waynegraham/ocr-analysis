@@ -8,5 +8,5 @@ torch
 transformers
 nltk
 easyocr
-torch
 pandas
+matplotlib
