@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \
     libxrender1 \
+    libgl1 \
     libxext6 && \
     rm -rf /var/lib/apt/lists/*
 
@@ -16,11 +17,14 @@ ENV NLTK_DATA=/usr/local/nltk_data
 # Set working directory
 WORKDIR /app
 
-# Copy everything in
-COPY . .
+# Copy requirements file
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Copy everything else in
+COPY . .
 
 # ✅ Pre-download NLTK data
 RUN python -m nltk.downloader -d $NLTK_DATA punkt punkt_tab

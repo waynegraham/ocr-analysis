@@ -2,6 +2,8 @@ pytesseract
 pdf2image
 easyocr
 paddleocr
+paddlepaddle
+opencv-python-headless
 torch
 transformers
 nltk
