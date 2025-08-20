@@ -1,7 +1,6 @@
 # OCR Pipeline
 
-This project explores the effectiveness of semantic search (using Apache Solr with dense vector support) and retrieval-augmented generation (RAG) systems over a corpus of OCR-processed PDFs from the Stanford University Board of Trustees. It includes benchmarking of multiple OCR engines, document segmentation, and a pipeline for comparing retrieval and generation quality.
-
+This project explores the effectiveness of semantic search (using Apache Solr with dense vector support) and retrieval-augmented generation (RAG) systems over a corpus of OCR-processed PDFs. It includes benchmarking of multiple OCR engines, document segmentation, and a pipeline for comparing retrieval and generation quality.
 
 ---
 
