@@ -1,2 +1,5 @@
 -r requirements.base.txt
-paddlepaddle-gpu
+# Choose ONE that matches the host CUDA version (check `nvidia-smi` on the server)
+# For CUDA 12.6:
+# @see https://www.paddlepaddle.org.cn/en
+paddlepaddle-gpu==3.1.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/

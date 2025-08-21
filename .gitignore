@@ -1,2 +1,5 @@
+data/
 data/pdfs
 data/ocr_output
+scratch.ipynb
+__pycache__/
