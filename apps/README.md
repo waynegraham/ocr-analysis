@@ -25,10 +25,6 @@ streamlit run apps/annotator.py
 ```
 
 
-
-
-
-
 ## Debugging
 
 dummy vector

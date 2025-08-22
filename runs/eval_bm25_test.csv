@@ -1,0 +1,4 @@
+qid,mode,k,p_at_k,r_at_k,mrr_at_k,ndcg_at_k,latency_ms,hits,error
+Q0001,bm25,10,0.0,0.0,0.0,0.0,18.65,0,
+Q0002,bm25,10,0.0,0.0,0.0,0.0,12.63,0,
+AGGREGATE,bm25,10,0.0,0.0,0.0,0.0,15.64,0,

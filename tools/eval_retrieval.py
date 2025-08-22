@@ -70,10 +70,14 @@ def gold_ids(entry: Dict) -> List[str]:
 
 # ------------- Solr calls -------------
 def post_form(url: str, params: List[Tuple[str, str]], timeout: int = 30) -> Tuple[Dict, float]:
+    """
+    Sends a POST request and returns the JSON response and latency.
+    """
     t0 = time.perf_counter()
     r = requests.post(url, data=params, timeout=timeout)
     lat = (time.perf_counter() - t0) * 1000.0
     if r.status_code >= 400:
+        # This will raise an exception on Solr errors, making debugging easier.
         raise RuntimeError(f"{r.status_code} {r.reason}: {r.text[:800]}")
     return r.json(), lat
 
@@ -103,9 +107,7 @@ def solr_bm25(solr_base, core, qtext, fl, rows, fqs=None, start=0):
     return data.get("response", {}).get("docs", []), lat
 
 
-def solr_knn(solr_base, core, qtext, fl, rows, embedder, fqs=None, start=0):
-    vec = embedder.encode([qtext], normalize_embeddings=True)[0]
-    qvec = [float(x) for x in vec]
+def solr_knn(solr_base, core, qvec, fl, rows, fqs=None, start=0):
     fl = fl or "id,score"
     fqs = fqs or []
 
@@ -117,36 +119,58 @@ def solr_knn(solr_base, core, qtext, fl, rows, embedder, fqs=None, start=0):
     payload = {
         "query": f"{{!knn f=vector topK={rows}}}{query_vector_str}",
         "limit": rows,
-        "fields": fl,
-        "start": start,
+        "fields": fl
     }
+
     if fqs:
         payload["filter"] = list(fqs)
 
+    t0 = time.perf_counter()
     r = requests.post(url, data=json.dumps(payload).encode("utf-8"),
                       headers=headers, timeout=30)
+    lat = (time.perf_counter() - t0) * 1000.0
     r.raise_for_status()
     data = r.json()
-    return data.get("response", {}).get("docs", []), data
+    return data.get("response", {}).get("docs", []), lat
 
 
-def solr_hybrid(solr_base, core, qtext, vec, fl, topk, fqs=None, start=0):
+def solr_hybrid(
+    solr_base: str,
+    core: str,
+    qtext: str,
+    vec: List[float],
+    fl: str,
+    topk: int,
+    fqs: Optional[List[str]] = None,
+    start: int = 0
+) -> Tuple[List[Dict[str, Any]], float]:
+    """
+    Performs a hybrid keyword + vector search in Solr using the rerank query parser.
+    """
     url = f"{solr_base.rstrip('/')}/{core}/select"
-    csv_vec = ",".join(str(float(x)) for x in vec)
-    params = [
+
+    # Define how many documents from the keyword search will be reranked.
+    rerank_docs = topk * 10
+
+    # 1. Define the actual KNN search query separately.
+    knn_query = f"{{!knn f=vector topK={topk}}}[{','.join(map(str, vec))}]"
+
+    # Use a dictionary for the 'rq' parameter to handle proper URL encoding
+    # of the nested query.
+    params: List[Tuple[str, str]] = [
         ("q", qtext or "*:*"),
         ("defType", "edismax"),
-        ("df", "text"),               # <-- add this (or use qf below)
-        # ("qf", "text^1 title^2"),
-        ("rq", "{!knn f=vector topK=%d}" % topk),
-        ("v", csv_vec),
+        ("df", "text"),
+        ("rq", f"{{!rerank reRankQuery='{knn_query}' reRankDocs={rerank_docs}}}"),
         ("fl", fl),
         ("rows", str(topk)),
         ("start", str(start)),
-        ("mm", "1<75%"),
     ]
+
     if fqs:
-        for f in fqs: params.append(("fq", f))
+        for f in fqs:
+            params.append(("fq", f))
+
     data, lat = post_form(url, params)
     return data.get("response", {}).get("docs", []), lat
 
@@ -252,11 +276,11 @@ def main():
                 elif mode == "knn":
                     if qvec is None:
                         raise RuntimeError("kNN requires embeddings.")
-                    docs, lat = solr_knn(args.solr_url, args.core, qvec, fl, args.k, embedder, fqs=args.filters)
+                    docs, lat = solr_knn(args.solr_url, args.core, qvec, fl, args.k, fqs=args.filters)
                 else:
                     if qvec is None:
                         raise RuntimeError("Hybrid requires embeddings.")
-                    docs, lat = solr_hybrid(args.solr_url, args.core, qtext, qvec, fl, args.k, embedder, fqs=args.filters)
+                    docs, lat = solr_hybrid(args.solr_url, args.core, qtext, qvec, fl, args.k, fqs=args.filters)
 
                 p, r, mrr, ndcg, rels = judge_results(docs, gold_seg_ids, gold_doc_ids, args.k)
                 if args.verbose:

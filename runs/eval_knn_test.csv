@@ -1,0 +1,3 @@
+qid,mode,k,p_at_k,r_at_k,mrr_at_k,ndcg_at_k,latency_ms,hits,error
+Q0001,knn,10,0.0,0.0,0.0,0.0,74.73074994049966,0,
+Q0002,knn,10,0.0,0.0,0.0,0.0,57.98912502359599,0,
