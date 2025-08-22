@@ -213,6 +213,15 @@ with st.expander("ℹ️ Instructions", expanded=True):
     - **Engine filter**: limit to Tesseract/EasyOCR/Paddle/SmolDocling for targeted comparison.
     - **Ouput path**: where annotations are written (sidebar).
                 
+    #### Folder layout the app expects
+    ```bash
+    PDF_DIR/                   # e.g., data/pdfs
+    <doc_id>.pdf
+    OCR_OUTPUT_DIR/
+    <engine>/                  # e.g., ocr_output/easyocr
+        <doc_id>.json          # may include {"pages":[...]} for accurate thumbnails
+    ```    
+                
     ## Troubleshooting
     - **No candidates**: check Solr is running and that VECTOR_FIELD and core env vars are set.
     - **400 from Solr**: schema mismatch or handler syntax—try without filters; verify vector dimension.
