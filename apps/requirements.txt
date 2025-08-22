@@ -3,3 +3,5 @@ requests
 sentence-transformers
 transformers
 torch
+pypdfium2
+Pillow
