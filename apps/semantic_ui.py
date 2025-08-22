@@ -126,9 +126,10 @@ if do_search and query.strip():
                     title = d.get("title") or d.get("doc_id") or d.get("id")
                     st.markdown(f"**{title}**")
                     md = d.get("meeting_date", "")
+                    doc_id = d.get("doc_id", "")
                     src = d.get("ocr_source", "")
                     segi = d.get("segment_index", "")
-                    st.caption(f"Date: `{md}` • Engine: `{src}` • Segment: `{segi}` • ID: `{d.get('id','')}`")
+                    st.caption(f"doc_id: `data/pdfs/{doc_id}.pdf` • Engine: `{src}` • Segment: `{segi}` • ID: `{d.get('id','')}`")
                 with right:
                     st.metric("Score", f"{d.get('score', 0):.4f}")
 
