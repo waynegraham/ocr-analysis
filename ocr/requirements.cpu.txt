@@ -1,4 +1,8 @@
+--index-url https://pypi.org/simple
+--extra-index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://www.paddlepaddle.org.cn/packages/stable/cpu/
+
 -r requirements.base.txt
-# PaddlePaddle CPU backend (3.x)
-# see https://www.paddlepaddle.org.cn/en
-paddlepaddle==3.1.1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+torch
+torchvision
+# paddlepaddle

@@ -18,6 +18,7 @@ WORKDIR /app
 
 COPY requirements.gpu.txt requirements.base.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.gpu.txt
+RUN pip install paddlepaddle-gpu==3.1.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 
 RUN python -m nltk.downloader -d $NLTK_DATA punkt punkt_tab
 

@@ -1,12 +1,11 @@
-paddleocr>=3.0.0
-opencv-python-headless==4.9.0.80
+# paddleocr>=3.0.0
+opencv-python-headless
 pdf2image==1.17.0
-easyocr==1.7.1
-numpy==1.26.4
+easyocr==1.7.2
+numpy
 nltk==3.9.1
-torch==2.2.2
-matplotlib==3.8.4
-pandas==2.2.2
+matplotlib==3.10.5
+pandas==2.3.2
 pytesseract==0.3.13
-docling>=2.4.0
+docling>=2.46.0
 pypdfium2>=4.30.0

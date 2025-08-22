@@ -103,3 +103,10 @@ deploy:
 ### NLTK Preloading
 
 All required NLTK resources (`punkt`, `punkt_tab`) are preinstalled in the container at `/usr/local/nltk_data`.
+
+## Clean Up
+
+```bash
+docker compose down -v
+docker builder prune -f
+```
