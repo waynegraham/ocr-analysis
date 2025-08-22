@@ -1,17 +1,32 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <schema name="trustees" version="1.6">
 
   <uniqueKey>id</uniqueKey>
 
-  <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
-  <field name="text" type="text_general" indexed="true" stored="true"/>
-  <field name="title" type="text_general" indexed="true" stored="true"/>
-  <field name="meeting_date" type="string" indexed="true" stored="true"/>
-  <field name="ocr_source" type="string" indexed="true" stored="true"/>
-  <field name="vector" type="knn_vector" indexed="true" stored="false"/>
+  <!-- ===== Fields ===== -->
+  <field name="id"                 type="string"       indexed="true"  stored="true"  required="true" multiValued="false"/>
+  <field name="text"               type="text_general" indexed="true"  stored="true"/>
+  <field name="title"              type="text_general" indexed="true"  stored="true"/>
+  <field name="meeting_date"       type="string"       indexed="true"  stored="true"/>
+  <field name="ocr_source"         type="string"       indexed="true"  stored="true"/>
+  <field name="doc_id"             type="string"       indexed="true"  stored="true"/>
+  <field name="segment_index"      type="pint"         indexed="true"  stored="true"/>
+  <field name="source_collection"  type="string"       indexed="true"  stored="true" multiValued="false"/>
 
-  <!-- Field types -->
+  <field name="avg_confidence"     type="pfloat"       indexed="true"  stored="true"/>
+  <field name="ocr_processing_time" type="pfloat"       indexed="true"  stored="true"/>
+
+  <!-- Dense vector field: put dimension on the fieldType, not the field -->
+  <field name="vector"             type="knn_vector"   indexed="true"  stored="true"/>
+
+  <!-- ===== Field Types ===== -->
   <fieldType name="string" class="solr.StrField" sortMissingLast="true"/>
+  <fieldType name="pint"   class="solr.IntPointField"/>
+  <fieldType name="pfloat" class="solr.FloatPointField"/>
+  <!-- If you later want a true date, switch meeting_date to pdate and send ISO8601 -->
+  <fieldType name="pdate"  class="solr.DatePointField"/>
+
+  <!-- Simple general analyzer (you can refine later) -->
   <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
     <analyzer type="index">
       <tokenizer class="solr.StandardTokenizerFactory"/>
@@ -23,8 +38,11 @@
     </analyzer>
   </fieldType>
 
-  <!-- Vector field type -->
+  <!-- Dense vector type for kNN: set your embedding dimension here -->
   <fieldType name="knn_vector" class="solr.DenseVectorField"
              vectorDimension="384"
              similarityFunction="cosine"/>
+
+  <!-- (Optional) dynamic catch-alls to avoid unknown field errors -->
+  <dynamicField name="attr_*" type="string" indexed="true" stored="true" multiValued="true"/>
 </schema>

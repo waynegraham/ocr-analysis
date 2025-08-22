@@ -83,6 +83,18 @@ Example:
 }
 ```
 
+## Index to Solr
+
+```bash
+python tools/index_to_solr.py \
+    --engine tesseract \
+    --ocr-dir data/ocr_output \
+    --solr http://localhost:8983/solr/trustees \
+    --model sentence-transformers/all-MiniLM-L6-v2 \
+    --vector-field vector \
+    --commit
+```
+
 ## Environment Configuration
 
 ### GPU on WSL or Linux
