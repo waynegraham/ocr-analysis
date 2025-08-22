@@ -1,47 +1,81 @@
-import easyocr
-from pdf2image import convert_from_path
-from utils.segment import segment_text
-import json
-import torch
-import time
+from __future__ import annotations
+import os, time, json
+from pathlib import Path
+from typing import Dict, Any, List, Tuple
+
 import numpy as np
+import pypdfium2 as pdfium
+from easyocr import Reader
+import torch
 
-def ocr(pdf_path):
-    from pdf2image import convert_from_path
-    import easyocr
-    from utils.segment import segment_text
+from utils.segment import segment_pages_to_sentences
 
-    reader = easyocr.Reader(['en'], gpu=torch.cuda.is_available()) # or set to False
 
-    start_time = time.time()
+def _want_gpu() -> bool:
+    env = os.getenv("EASYOCR_GPU")
+    if env is not None:
+        return env.strip().lower() in ("1", "true", "yes")
+    return torch.cuda.is_available()
 
-    images = convert_from_path(str(pdf_path))
+_GPU = _want_gpu()
+_READER = Reader(lang_list=["en"], gpu=_GPU)
 
-    full_text = ""
-    confidences = []
+def _pdf_pages_to_numpy(pdf_path: Path, scale: float = 2.0) -> List[np.ndarray]:
+    doc = pdfium.PdfDocument(str(pdf_path))
+    try:
+        out: List[np.ndarray] = []
+        for i in range(len(doc)):
+            page = doc.get_page(i)
+            pil = page.render(scale=scale).to_pil().convert("RGB")
+            page.close()
+            out.append(np.array(pil))
+        return out
+    finally:
+        doc.close()
 
-    for img in images:
-        img_np = np.array(img)  # Convert PIL to NumPy
-        result = reader.readtext(img_np)
-        page_text = []
-        for item in result:
-            text = item[1]
-            conf = item[2]
-            page_text.append(text)
-            confidences.append(conf)
-        full_text += " ".join(page_text) + "\n"
+def _ocr_page(arr: np.ndarray) -> Tuple[str, List[float]]:
+    preds = _READER.readtext(arr, detail=1, paragraph=False)
+    texts, confs = [], []
+    for p in preds:
+        try:
+            t = (p[1] or "").strip()
+            c = float(p[2]) if len(p) > 2 else 0.0
+        except Exception:
+            t, c = "", 0.0
+        if t:
+            texts.append(" ".join(t.split()))
+            confs.append(c)
+    return " ".join(texts).strip(), confs
 
-    segments = segment_text(full_text)
-    avg_conf = round(sum(confidences) / len(confidences), 3) if confidences else 0.0
-    processing_time = round(time.time() - start_time, 2)
+def to_json(obj: Dict[str, Any]) -> str:
+    return json.dumps(obj, ensure_ascii=False, indent=2)
 
-    print(f"📊 {pdf_path.name} - EasyOCR avg confidence: {avg_conf} ({processing_time}s)")
+def ocr(pdf_path: Path) -> Dict[str, Any]:
+    t0 = time.time()
+    scale = float(os.getenv("EASYOCR_PDF_SCALE", "2.0"))
+    imgs = _pdf_pages_to_numpy(pdf_path, scale=scale)
 
+    page_texts: List[str] = []
+    confs_all: List[float] = []
+    for arr in imgs:
+        txt, confs = _ocr_page(arr)
+        page_texts.append(txt or "")
+        confs_all.extend(confs or [])
+
+    segments, seg2page = segment_pages_to_sentences(page_texts)
+    try:
+        fsize = pdf_path.stat().st_size
+    except Exception:
+        fsize = -1
+
+    avg_conf = (sum(confs_all) / len(confs_all)) if confs_all else None
     return {
+        "engine": "easyocr",
+        "filesize_bytes": fsize,
+        "num_pages": len(page_texts),
+        "pages": [{"text": t} for t in page_texts],
         "segments": segments,
+        "segment2page": seg2page,
         "avg_confidence": avg_conf,
-        "processing_time": processing_time
+        "engine_time": round(time.time() - t0, 2),
     }
-
-def to_json(result):
-    return json.dumps(result, indent=2)

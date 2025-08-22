@@ -40,12 +40,10 @@ def _coerce_text(item):
     if isinstance(item, str):
         return item
     if isinstance(item, dict):
-        # common shapes: {"text": "..."} or {"segment": "..."} or {"content": "..."}
         for key in ("text", "segment", "content", "value"):
             v = item.get(key)
             if isinstance(v, str):
                 return v
-    # unknown shape
     return ""
 
 def build_solr_docs_for_file(json_data, doc_id: str, engine: str,
@@ -59,40 +57,41 @@ def build_solr_docs_for_file(json_data, doc_id: str, engine: str,
         "ocr_source": engine,
         "avg_confidence": json_data.get("avg_confidence"),
         "ocr_processing_time": json_data.get("processing_time"),
+        "num_pages": json_data.get("num_pages"),
+        "filesize_bytes": json_data.get("filesize_bytes"),
     }
 
-    # Prefer 'segments', else fall back to 'pages'
+    # Prefer explicit segments
     items = json_data.get("segments")
     if items is None:
-        items = json_data.get("pages", [])
+        # fallback: build from pages list
+        items = [p.get("text","") if isinstance(p, dict) else (p or "") for p in json_data.get("pages", [])]
 
     # Normalize to strings
     normalized = [_coerce_text(it).strip() for it in items]
-    # Filter empties
     normalized = [t for t in normalized if t]
 
-    # Build per-segment docs
-    for idx, text in enumerate(normalized):
+    # Optional page mapping
+    seg2page = json_data.get("segment2page")
+    if not isinstance(seg2page, list) or len(seg2page) != len(normalized):
+        seg2page = [None] * len(normalized)
+
+    for idx, (text, pidx) in enumerate(zip(normalized, seg2page)):
         doc = {
             "id": f"{doc_id}#{idx}",
             "text": text,
             "segment_index": idx,
+            "page_index": pidx if isinstance(pidx, int) else None,
             **meta,
         }
         docs.append(doc)
         segments_str.append(text)
 
-    # Optional embeddings
+    # Embeddings (unchanged)
     if embedder and docs:
-        print(f"   ↳ Encoding {len(segments_str)} segments")
-        vectors = embedder.encode(
-            segments_str,
-            normalize_embeddings=True,
-            batch_size=batch_size
-        )
+        vectors = embedder.encode(segments_str, normalize_embeddings=True, batch_size=batch_size)
         for doc, vec in zip(docs, vectors):
             doc[vector_field] = vec.tolist()
-        print(f"   ↳ sample vector length: {len(vectors[0])}")
 
     return docs
 

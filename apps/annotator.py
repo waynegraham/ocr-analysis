@@ -15,7 +15,7 @@ SOLR_URL       = os.getenv("SOLR_URL", "http://localhost:8983/solr")
 SOLR_CORE      = os.getenv("SOLR_CORE", "trustees")
 VECTOR_FIELD   = os.getenv("VECTOR_FIELD", "vector")
 MODEL_NAME     = os.getenv("MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
-RETURN_FIELDS  = "id,score,text,doc_id,segment_index,meeting_date,ocr_source,title"
+RETURN_FIELDS = "id,score,text,doc_id,segment_index,meeting_date,ocr_source,title,page_index"
 
 # Where PDFs live and where OCR JSONs live (by engine)
 PDF_DIR        = Path(os.getenv("PDF_DIR", "data/pdfs"))
@@ -295,11 +295,10 @@ for i, d in enumerate(candidates):
     date     = d.get("meeting_date", "")
     seg_idx  = d.get("segment_index", "")
 
-    # Infer page
-    page_idx = infer_page_index(doc_id, engine, seg_text)
-    # Fallback to page 0 if not found
+    page_idx = d.get("page_index", None)
     if page_idx is None:
-        page_idx = 0
+        # graceful fallback for older docs that lack mapping
+        page_idx = infer_page_index(doc_id, engine, seg_text) or 0
 
     # Render thumbnail
     thumb = render_page_thumbnail(doc_id, page_idx, scale=1.6)

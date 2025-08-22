@@ -1,58 +1,91 @@
-# ocr/engines/paddleocr.py
-import time, json, numpy as np
+from __future__ import annotations
+import os, time, json
 from pathlib import Path
+from typing import Dict, Any, List, Tuple
+
+import numpy as np
+import pypdfium2 as pdfium
+
 from paddleocr import PaddleOCR
-from pdf2image import convert_from_path
-from utils.segment import segment_text
+from utils.segment import segment_pages_to_sentences
 
-# ocr_engine = PaddleOCR(
-#     use_angle_cls=True,
-#     lang='en'
-# )
+# ---------------- Config ----------------
+def _want_gpu() -> bool:
+    env = os.getenv("PPOCR_GPU")
+    if env is not None:
+        return env.strip().lower() in ("1", "true", "yes")
+    # let Paddle choose; default False for cross-env safety
+    return False
 
-ocr_engine = PaddleOCR(
-    text_detection_model_name="PP-OCRv5_mobile_det",
-    text_recognition_model_name="PP-OCRv5_mobile_rec",
-    use_doc_orientation_classify=False,
-    use_doc_unwarping=False,
-    use_textline_orientation=False) 
+_GPU = _want_gpu()
 
+# Languages: 'en' for English; add others if needed.
+# rec, det models auto-selected by PaddleOCR for lang='en' (PP-OCRv5 series)
+_OCR = PaddleOCR(lang='en', use_gpu=_GPU, show_log=False)
 
-def ocr(pdf_path):
-    pdf_path = Path(pdf_path)
-    start_time = time.time()
+def _pdf_pages_to_numpy(pdf_path: Path, scale: float = 2.0) -> List[np.ndarray]:
+    doc = pdfium.PdfDocument(str(pdf_path))
+    try:
+        out: List[np.ndarray] = []
+        for i in range(len(doc)):
+            page = doc.get_page(i)
+            pil = page.render(scale=scale).to_pil().convert("RGB")
+            page.close()
+            out.append(np.array(pil))
+        return out
+    finally:
+        doc.close()
 
-    images = convert_from_path(str(pdf_path))
-    full_text, confidences = "", []
+def _ocr_page(arr: np.ndarray) -> Tuple[str, List[float]]:
+    # PaddleOCR expects file path or numpy array (H,W,C) BGR? It accepts RGB ndarray too.
+    # result is list: for each block: [ [box], (text, conf) ] or similar
+    res = _OCR.ocr(arr, cls=True)
+    texts, confs = [], []
+    if res and isinstance(res, list):
+        # res is [ page_result ], and page_result is list of lines
+        page_result = res[0] if len(res) > 0 else []
+        for line in page_result or []:
+            try:
+                txt = (line[1][0] or "").strip()
+                conf = float(line[1][1]) if line[1][1] is not None else 0.0
+            except Exception:
+                txt, conf = "", 0.0
+            if txt:
+                texts.append(" ".join(txt.split()))
+                confs.append(conf)
+    return " ".join(texts).strip(), confs
 
-    # for img in images:
-    #     img_np = np.array(img)
-    #     result = ocr_engine.ocr(img_np)
+def to_json(obj: Dict[str, Any]) -> str:
+    return json.dumps(obj, ensure_ascii=False, indent=2)
 
-    #     if not result:
-    #         full_text += "\n"
-    #         continue
+def ocr(pdf_path: Path) -> Dict[str, Any]:
+    t0 = time.time()
+    scale = float(os.getenv("PPOCR_PDF_SCALE", "2.0"))
+    imgs = _pdf_pages_to_numpy(pdf_path, scale=scale)
 
-    #     page_items = result[0]
-    #     tokens = []
-    #     for line in page_items:
-    #         text, conf = line[1]
-    #         text = (text or "").strip()
-    #         if text:
-    #             tokens.append(text)
-    #             try:
-    #                 confidences.append(float(conf))
-    #             except Exception:
-    #                 pass
-    #     full_text += " ".join(tokens) + "\n"
+    page_texts: List[str] = []
+    confs_all: List[float] = []
+    for arr in imgs:
+        txt, confs = _ocr_page(arr)
+        page_texts.append(txt or "")
+        confs_all.extend(confs or [])
 
-    segments = segment_text(full_text)
-    avg_conf = round(sum(confidences) / len(confidences), 3) if confidences else 0.0
-    processing_time = round(time.time() - start_time, 2)
+    segments, seg2page = segment_pages_to_sentences(page_texts)
 
-    print(f"📊 {pdf_path.name} - PaddleOCR(v3) avg confidence: {avg_conf} ({processing_time}s)")
-    return {"segments": segments, "avg_confidence": avg_conf, "processing_time": processing_time}
+    try:
+        fsize = pdf_path.stat().st_size
+    except Exception:
+        fsize = -1
 
+    avg_conf = (sum(confs_all) / len(confs_all)) if confs_all else None
 
-def to_json(result):
-    return json.dumps(result, indent=2)
+    return {
+        "engine": "paddleocr",
+        "filesize_bytes": fsize,
+        "num_pages": len(page_texts),
+        "pages": [{"text": t} for t in page_texts],
+        "segments": segments,
+        "segment2page": seg2page,
+        "avg_confidence": avg_conf,
+        "engine_time": round(time.time() - t0, 2),
+    }

@@ -122,3 +122,27 @@ All required NLTK resources (`punkt`, `punkt_tab`) are preinstalled in the conta
 docker compose down -v
 docker builder prune -f
 ```
+
+## TODO
+
+- Update annotator to prefer page_index (no inference).
+- Update indexer to set an indexed/stored page_index field.
+- Add pages, file size, page count, and segment2page indexes to OCR JSON
+- In Semantic Search UI, add checkbox for "Use Hybrid (BB25+KNN)
+- Add Next/Prev buttons wired to start for both knn and hybrid functions
+- Show Solr QTime and client latency
+- Implement a segmenters module and try
+  - sentence (punkt), paragraph, sliding window (~220 tokens, stride 120)
+  - Encode & index each variant (tag segmenter field)
+  - Re-run `eval_retrieval.py` with `--filter segmenter:window220`
+- Add a second vector field for Solr at 768-dim 
+- Test models
+  - 382-dim (`all-MiniLM-L6-v2`, `intfloat/e5-small-v2`)
+  - 768-dim: (`bge-base-en-v1.5`, `intfloat/e5-base`)
+- Extend indexer/UI to Switch VECTOR_FIELD based on model; compare metrics & latency
+- Create reports
+  - Reads `runs/*.csv`
+  - Output Markdown/HTML with tables (p@1, p@5, MRR, nDCG, latency) grouped by **engine x segmenter x model x mode**.
+  - Include 2-3 "case study" queries showing wins/fails with snippet + metadata
+- Add a toggle to mark partial or negative
+- 
