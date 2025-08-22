@@ -1,5 +1,15 @@
+--index-url https://pypi.org/simple
+--extra-index-url https://download.pytorch.org/whl/cu126
+--extra-index-url https://www.paddlepaddle.org.cn/packages/stable/cu126/
+
 -r requirements.base.txt
+
+# PyTorch CUDA 12.6 wheels
+torch
+torchvision
+
+# Paddle GPU backend (CUDA 12.6); change the index if your host is cu12.2 or cu11.8
 # Choose ONE that matches the host CUDA version (check `nvidia-smi` on the server)
 # For CUDA 12.6:
 # @see https://www.paddlepaddle.org.cn/en
-paddlepaddle-gpu==3.1.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+# paddlepaddle-gpu
